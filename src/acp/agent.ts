@@ -51,11 +51,16 @@ interface ConfigResult {
 	configOptions: SessionConfigOption[];
 }
 
+const DEFAULT_MODELS = [
+	"gemini-3.6-flash-medium",
+	"claude-opus-4-6-thinking",
+];
+
 export class AgyAcpAgent {
 	private readonly sessions: SessionManager;
 	private readonly adapter: Adapter;
 	private readonly replayCache = new ReplayCache();
-	private availableModels: string[] = [];
+	private availableModels: string[] = [...DEFAULT_MODELS];
 	// Tracks which AcpClient is serving each session so async updates can be pushed.
 	private readonly activeClients = new Map<string, AcpClient>();
 
@@ -74,6 +79,16 @@ export class AgyAcpAgent {
 				if (Array.isArray(cached) && cached.length > 0) {
 					this.availableModels = cached;
 				}
+			}
+		} catch {
+			// ignore
+		}
+
+		// Save initial default models cache if missing
+		try {
+			if (!fs.existsSync(MODELS_CACHE_FILE)) {
+				fs.mkdirSync(STATE_DIR, { recursive: true });
+				fs.writeFileSync(MODELS_CACHE_FILE, JSON.stringify(this.availableModels));
 			}
 		} catch {
 			// ignore
@@ -98,6 +113,18 @@ export class AgyAcpAgent {
 	}
 
 	// --- ACP methods ---------------------------------------------------------
+
+	listModels() {
+		const models = this.availableModels.length > 0 ? this.availableModels : DEFAULT_MODELS;
+		return {
+			models: models.map((m) => ({
+				id: m,
+				name: m,
+				description: `Google Antigravity ${m}`,
+			})),
+			currentModelId: models[0],
+		};
+	}
 
 	initialize(): InitializeResponse {
 		return {

@@ -85,6 +85,12 @@ export function runAcp() {
 		.onRequest(methods.agent.session.setConfigOption, (ctx) =>
 			agentImpl.setConfigOption(ctx.params),
 		)
+		.onRequest("models/list", raw<unknown>(), () =>
+			agentImpl.listModels(),
+		)
+		.onRequest("agent/models/list", raw<unknown>(), () =>
+			agentImpl.listModels(),
+		)
 		.onRequest("resources/list", raw<unknown>(), () =>
 			agentImpl.listResources(),
 		)
